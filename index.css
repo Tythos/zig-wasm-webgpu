@@ -1,0 +1,18 @@
+:root {
+    color-scheme: light dark;
+}
+
+html,
+body {
+    margin: 0;
+    height: 100%;
+    display: flex;
+    place-content: center center;
+}
+
+canvas {
+    width: 600px;
+    height: 600px;
+    max-width: 100%;
+    display: block;
+}
