@@ -2,9 +2,9 @@
  * index.mjs
  */
 
-const vertexShaderSource = await fetch("./src/basic.v.wgsl").then(response => response.text());
-const fragmentShaderSource = await fetch("./src/basic.f.wgsl").then(response => response.text());
-const computeShaderSource = await fetch("./src/basic.c.wgsl").then(response => response.text());
+import vertexShaderSource from "./public/basic.v.wgsl?raw";
+import fragmentShaderSource from "./public/basic.f.wgsl?raw";
+import computeShaderSource from "./public/basic.c.wgsl?raw";
 
 const GRID_SIZE = 100;
 const UPDATE_INTERVAL_MS = 100;
@@ -50,6 +50,10 @@ function updateGrid() {
     ADAPTER_DEVICE.queue.submit([commandBuffer]);
 }
 
+function slice2string(buffer, ptr, len) {
+    return new TextDecoder().decode(new Uint8Array(buffer, ptr, len));
+}
+
 async function main() {
     // assert support, resolve adapter
     if (!window.navigator.gpu) {
@@ -71,6 +75,22 @@ async function main() {
         "format": canvasFormat
     });
     console.log("canvas context acquired:", CANVAS_CONTEXT);
+
+    // fetch and instantiate wasm module
+    const moduleInstance = await fetch("./main.wasm")
+        .then(response => response.arrayBuffer())
+        .then(bytes => WebAssembly.instantiate(bytes, {
+            "Console": {
+                "log": (ptr, len) => {
+                    console.log(slice2string(moduleInstance.memory.buffer, ptr, len))
+                }
+            },
+            "env": {
+                "key": "value"
+            }
+        }))
+        .then(results => results.instance);
+    console.log("WASM module instance:", moduleInstance);
 
     // define vertex buffer
     VERTEX_DATA = new Float32Array([
