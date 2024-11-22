@@ -1,18 +1,14 @@
-:root {
-    color-scheme: light dark;
-}
-
-html,
 body {
     margin: 0;
-    height: 100%;
-    display: flex;
-    place-content: center center;
+    padding: 0;
+    background-color: #111;
+    width: 100vw;
+    height: 100vh;
+    display: grid;
 }
 
 canvas {
-    width: 600px;
-    height: 600px;
-    max-width: 100%;
-    display: block;
+    background-color: #eee;
+    justify-self: center;
+    align-self: center;
 }

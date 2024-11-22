@@ -1,18 +1,13 @@
 {
   "name": "zig-wasm-webgpu",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
+    "build": "vite build"
   },
   "devDependencies": {
-    "typescript": "~5.6.2",
     "vite": "^5.4.10"
-  },
-  "dependencies": {
-    "wgpu-matrix": "^3.3.0"
   }
 }
