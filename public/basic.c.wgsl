@@ -1,5 +1,5 @@
 /**
- * src/basic.c.wgsl
+ * public/basic.c.wgsl
  */
 
 @group(0) @binding(0) var<uniform> grid: vec2f;
@@ -11,20 +11,20 @@ fn cellIndex(cell: vec2u) -> u32 {
 }
 
 fn cellActive(x: u32, y: u32) -> u32 {
-    return cellStateIn[cellIndex(vec2(x, y))];
+     return cellStateIn[cellIndex(vec2(x, y))];
 }
 
 @compute @workgroup_size(8, 8)
 fn computeMain(@builtin(global_invocation_id) cell: vec3u) {
-    let activeNeighbors =
+    let activeNeighbors = 
         cellActive(cell.x+1, cell.y+1) + // upper-right
         cellActive(cell.x+1, cell.y) + // middle-right
         cellActive(cell.x+1, cell.y-1) + // lower-right
-        cellActive(cell.x, cell.y-1) + // lower-center
+        cellActive(cell.x, cell.y-1) + // lower-middle
         cellActive(cell.x-1, cell.y-1) + // lower-left
         cellActive(cell.x-1, cell.y) + // middle-left
         cellActive(cell.x-1, cell.y+1) + // upper-left
-        cellActive(cell.x, cell.y+1); // upper-center
+        cellActive(cell.x, cell.y+1); // upper-middle
     let i = cellIndex(cell.xy);
     switch activeNeighbors {
         case 2: {

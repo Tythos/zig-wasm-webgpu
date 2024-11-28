@@ -2,12 +2,12 @@
  * index.mjs
  */
 
-import vertexShaderSource from "./public/basic.v.wgsl?raw";
-import fragmentShaderSource from "./public/basic.f.wgsl?raw";
 import computeShaderSource from "./public/basic.c.wgsl?raw";
+import fragmentShaderSource from "./public/basic.f.wgsl?raw";
+import vertexShaderSource from "./public/basic.v.wgsl?raw";
 
-const GRID_SIZE = 100;
-const UPDATE_INTERVAL_MS = 100;
+const GRID_SIZE = 512;
+const UPDATE_INTERVAL_MS = 200;
 const WORKGROUP_SIZE = 8;
 let ADAPTER_DEVICE = null;
 let CANVAS_CONTEXT = null;
@@ -50,23 +50,18 @@ function updateGrid() {
     ADAPTER_DEVICE.queue.submit([commandBuffer]);
 }
 
-function slice2string(buffer, ptr, len) {
-    return new TextDecoder().decode(new Uint8Array(buffer, ptr, len));
-}
-
 async function main() {
-    // assert support, resolve adapter
+    // assert support, resolve adapter device
     if (!window.navigator.gpu) {
-        throw new Error("WebGPU not supported");
+        throw new Errror("WebGPU not supported on this browser.");
     }
     const adapter = await window.navigator.gpu.requestAdapter();
     if (!adapter) {
-        throw new Error("Unable to acquire WebGPU adapter");
+        throw new Error("No appropriate GPUAdapter found.");
     }
     ADAPTER_DEVICE = await adapter.requestDevice();
-    console.log("adapter device acquired:", ADAPTER_DEVICE);
 
-    // identify context
+    // identify context, format from canvas
     const canvas = window.document.querySelector("canvas");
     CANVAS_CONTEXT = canvas.getContext("webgpu");
     const canvasFormat = window.navigator.gpu.getPreferredCanvasFormat();
@@ -74,23 +69,6 @@ async function main() {
         "device": ADAPTER_DEVICE,
         "format": canvasFormat
     });
-    console.log("canvas context acquired:", CANVAS_CONTEXT);
-
-    // fetch and instantiate wasm module
-    const moduleInstance = await fetch("./main.wasm")
-        .then(response => response.arrayBuffer())
-        .then(bytes => WebAssembly.instantiate(bytes, {
-            "Console": {
-                "log": (ptr, len) => {
-                    console.log(slice2string(moduleInstance.memory.buffer, ptr, len))
-                }
-            },
-            "env": {
-                "key": "value"
-            }
-        }))
-        .then(results => results.instance);
-    console.log("WASM module instance:", moduleInstance);
 
     // define vertex buffer
     VERTEX_DATA = new Float32Array([
@@ -113,12 +91,11 @@ async function main() {
         "attributes": [{
             "format": "float32x2",
             "offset": 0,
-            "shaderLocation": 0,
+            "shaderLocation": 0
         }]
     };
-    console.log("vertex buffer populated:", VERTEX_BUFFER);
 
-    // define uniforms buffer
+    // define uniform buffer
     const uniformArray = new Float32Array([GRID_SIZE, GRID_SIZE]);
     const uniformBuffer = ADAPTER_DEVICE.createBuffer({
         "label": "Grid Uniforms",
@@ -126,9 +103,8 @@ async function main() {
         "usage": GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     });
     ADAPTER_DEVICE.queue.writeBuffer(uniformBuffer, 0, uniformArray);
-    console.log("uniform buffer populated:", uniformBuffer);
-
-    // define state buffer
+    
+    // define the state buffers
     const cellStateArray = new Uint32Array(GRID_SIZE * GRID_SIZE);
     const cellStateStorage = [
         ADAPTER_DEVICE.createBuffer({
@@ -146,7 +122,6 @@ async function main() {
         cellStateArray[i] = Math.random() > 0.6 ? 1 : 0;
     }
     ADAPTER_DEVICE.queue.writeBuffer(cellStateStorage[0], 0, cellStateArray);
-    console.log("cell state populated:", cellStateStorage[0]);
 
     // define/compile shader programs
     const cellShaderModule = ADAPTER_DEVICE.createShaderModule({
@@ -162,7 +137,6 @@ async function main() {
             computeShaderSource
         ].join("\n")
     });
-    console.log("created shader modules:", cellShaderModule, simulationShaderModule);
 
     // define binding layouts
     const bindGroupLayout = ADAPTER_DEVICE.createBindGroupLayout({
@@ -185,9 +159,8 @@ async function main() {
         "label": "Cell Pipeline Layout",
         "bindGroupLayouts": [bindGroupLayout]
     });
-    console.log("defined binding layouts:", bindGroupLayout);
 
-    // pipelines := program + buffers
+    // define pipelines from program and buffers
     CELL_PIPELINE = ADAPTER_DEVICE.createRenderPipeline({
         "label": "Cell pipeline",
         "layout": pipelineLayout,
@@ -212,7 +185,6 @@ async function main() {
             "entryPoint": "computeMain"
         }
     });
-    console.log("pipelines generated:", CELL_PIPELINE, SIMULATION_PIPELINE);
 
     // define pipeline bindings
     BIND_GROUPS = [
@@ -245,11 +217,9 @@ async function main() {
             }]
         })
     ];
-    console.info("binding groups defined:", BIND_GROUPS[0], BIND_GROUPS[1]);
 
     // finally, launch the main loop
     setInterval(updateGrid, UPDATE_INTERVAL_MS);
 }
 
-// window.addEventListener("load", main);
-main();
+window.addEventListener("load", main);

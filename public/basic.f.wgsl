@@ -1,5 +1,5 @@
 /**
- * src/basic.f.wgsl
+ * public/basic.f.wgsl
  */
 
 @fragment

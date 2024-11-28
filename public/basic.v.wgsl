@@ -1,5 +1,5 @@
 /**
- * src/basic.v.wgsl
+ * public/basic.v.wgsl
  */
 
 struct VertexInput {
